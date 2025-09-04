@@ -4,13 +4,16 @@ WORKDIR /app
 
 # Копирование package.json и установка зависимостей
 COPY package*.json ./
-RUN npm install --omit=dev
+RUN npm install
 
 # Копирование исходного кода
 COPY . .
 
 # Сборка TypeScript
 RUN npm run build
+
+# Удаление dev зависимостей после сборки
+RUN npm prune --production
 
 # Создание непривилегированного пользователя
 RUN addgroup -g 1001 -S nodejs
