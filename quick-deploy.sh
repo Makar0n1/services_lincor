@@ -61,6 +61,7 @@ fi
 echo ""
 echo "🎉 Деплой завершен!"
 echo "🌐 API Gateway: http://localhost:3004"
+echo "🌐 Nginx: http://localhost:8080"
 echo "🔍 Health Check: http://localhost:3004/health"
 echo "📊 Логи: docker-compose logs -f"
 echo "🛑 Остановка: docker-compose down"
