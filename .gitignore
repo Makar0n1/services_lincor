@@ -3,6 +3,7 @@
 .env.local
 .env.production
 env.production
+NGINX_FIX.md
 
 # Logs
 logs
