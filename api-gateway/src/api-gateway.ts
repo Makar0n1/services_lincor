@@ -24,7 +24,7 @@ import manualLinksRoutes from './routes/manualLinks';
 import googleSheetsRoutes from './routes/googleSheets';
 
 // Загрузка переменных окружения
-dotenv.config();
+dotenv.config({ path: '../../.env' });
 
 const app = express();
 const server = createServer(app);
@@ -35,7 +35,7 @@ const io = new SocketIOServer(server, {
   }
 });
 
-const PORT = process.env['PORT'] || 3000
+const PORT = process.env['PORT'] || 3004
 
 // Middleware для безопасности
 app.use(helmet({

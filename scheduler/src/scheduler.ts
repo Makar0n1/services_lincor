@@ -5,7 +5,7 @@ import { SchedulerService } from './services/schedulerService';
 import { GoogleSheetsService } from './services/googleSheetsService';
 
 // Загрузка переменных окружения
-dotenv.config();
+dotenv.config({ path: '../../.env' });
 
 // Функция инициализации Scheduler
 async function startScheduler() {

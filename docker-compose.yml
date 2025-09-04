@@ -48,7 +48,7 @@ services:
     container_name: lincor-api
     environment:
       - NODE_ENV=production
-      - PORT=3000
+      - PORT=3004
       - DB_HOST=postgres
       - DB_PORT=5432
       - DB_NAME=${DB_NAME:-LinkChecker}
@@ -66,7 +66,7 @@ services:
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASSWORD=${SMTP_PASSWORD}
     ports:
-      - "3000:3000"
+      - "3004:3004"
     depends_on:
       postgres:
         condition: service_healthy
@@ -78,7 +78,7 @@ services:
     volumes:
       - ./service-account.json:/app/service-account.json:ro
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3004/health"]
       interval: 30s
       timeout: 10s
       retries: 3

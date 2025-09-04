@@ -50,10 +50,10 @@ docker-compose ps
 
 # Проверка health check
 echo "🏥 Checking health status..."
-curl -f http://localhost:3000/health || echo "❌ Health check failed"
+curl -f http://localhost:3004/health || echo "❌ Health check failed"
 
 echo "✅ Deployment completed!"
-echo "🌐 API Gateway: http://localhost:3000"
-echo "🔍 Health Check: http://localhost:3000/health"
+echo "🌐 API Gateway: http://localhost:3004"
+echo "🔍 Health Check: http://localhost:3004/health"
 echo "📊 Monitor logs: docker-compose logs -f"
 echo "🛑 Stop services: docker-compose down"

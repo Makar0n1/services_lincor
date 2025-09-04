@@ -51,7 +51,7 @@ echo "📊 Проверка статуса сервисов..."
 docker-compose ps
 
 echo "🏥 Проверка health check..."
-if curl -f http://localhost:3000/health > /dev/null 2>&1; then
+if curl -f http://localhost:3004/health > /dev/null 2>&1; then
     echo "✅ Health check прошел успешно!"
 else
     echo "❌ Health check не прошел. Проверьте логи:"
@@ -60,8 +60,8 @@ fi
 
 echo ""
 echo "🎉 Деплой завершен!"
-echo "🌐 API Gateway: http://localhost:3000"
-echo "🔍 Health Check: http://localhost:3000/health"
+echo "🌐 API Gateway: http://localhost:3004"
+echo "🔍 Health Check: http://localhost:3004/health"
 echo "📊 Логи: docker-compose logs -f"
 echo "🛑 Остановка: docker-compose down"
 echo ""

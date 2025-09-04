@@ -5,7 +5,7 @@ import { BullMQService } from './services/bullmqService';
 import { LinkAnalyzer } from './services/linkAnalyzer';
 
 // Загрузка переменных окружения
-dotenv.config();
+dotenv.config({ path: '../../.env' });
 
 // Функция инициализации Worker
 async function startWorker() {
