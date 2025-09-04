@@ -49,12 +49,16 @@ CREATE TABLE IF NOT EXISTS manual_links (
     project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
     url TEXT NOT NULL,
     target_domain VARCHAR(255) NOT NULL,
+    original_target_domain VARCHAR(255),
+    type VARCHAR(20) DEFAULT 'manual',  -- ЭТА СТРОКА ДОЛЖНА БЫТЬ
     status VARCHAR(20) DEFAULT 'pending',
     response_code INTEGER,
     indexable BOOLEAN,
     link_type VARCHAR(20),
     canonical_url TEXT,
     load_time INTEGER,
+    full_a_tag TEXT,
+    non_indexable_reason TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     checked_at TIMESTAMP
 );
