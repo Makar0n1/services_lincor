@@ -1,0 +1,178 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: lincor-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-LinkChecker}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-Hdgzzptas2}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - lincor-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis для кэширования и очередей
+  redis:
+    image: redis:7-alpine
+    container_name: lincor-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - lincor-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # API Gateway - основной сервис с Express и Socket.IO
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: lincor-api
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-LinkChecker}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-Hdgzzptas2}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+      - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN:-30d}
+      - FRONTEND_URL=${FRONTEND_URL:-https://lincor.repsdeltsgear.store}
+      - API_BASE_URL=${API_BASE_URL:-https://lincor.repsdeltsgear.store/api}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - lincor-network
+    restart: unless-stopped
+    volumes:
+      - ./service-account.json:/app/service-account.json:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Worker Service - анализ ссылок
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-LinkChecker}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-Hdgzzptas2}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - WORKER_CONCURRENT_LINKS=${WORKER_CONCURRENT_LINKS:-5}
+      - WORKER_BROWSER_INSTANCES=${WORKER_BROWSER_INSTANCES:-5}
+      - WORKER_QUEUE_PROCESSING_INTERVAL=${WORKER_QUEUE_PROCESSING_INTERVAL:-1000}
+      - SCRAPE_DO_API_KEY=${SCRAPE_DO_API_KEY}
+      - SCRAPE_DO_BASE_URL=${SCRAPE_DO_BASE_URL:-https://api.scrape.do}
+      - SCRAPE_DO_TIMEOUT=${SCRAPE_DO_TIMEOUT:-30000}
+      - SCRAPE_DO_RETRY_ATTEMPTS=${SCRAPE_DO_RETRY_ATTEMPTS:-2}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - lincor-network
+    restart: unless-stopped
+    volumes:
+      - ./service-account.json:/app/service-account.json:ro
+    deploy:
+      replicas: 2  # Можно масштабировать количество воркеров
+    healthcheck:
+      test: ["CMD", "node", "-e", "process.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Scheduler Service - планировщик Google Sheets
+  scheduler:
+    build:
+      context: ./scheduler
+      dockerfile: Dockerfile
+    container_name: lincor-scheduler
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-LinkChecker}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-Hdgzzptas2}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - GOOGLE_SERVICE_ACCOUNT_EMAIL=${GOOGLE_SERVICE_ACCOUNT_EMAIL}
+      - GOOGLE_PRIVATE_KEY_PATH=/app/service-account.json
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - lincor-network
+    restart: unless-stopped
+    volumes:
+      - ./service-account.json:/app/service-account.json:ro
+    healthcheck:
+      test: ["CMD", "node", "-e", "process.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Nginx Load Balancer (CloudFlare будет обрабатывать HTTPS)
+  nginx:
+    image: nginx:alpine
+    container_name: lincor-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/lincor.repsdeltsgear.store.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api-gateway
+    networks:
+      - lincor-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  lincor-network:
+    driver: bridge
